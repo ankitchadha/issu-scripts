@@ -74,11 +74,15 @@ function issu_contrail_prepare_compute_node {
 
 function issu_contrail_upgrade_compute_node {
     echo "== Step 2 =="
-    # Create new repo, upgrade contrail-openstack-vrouter (or upgrade these: contrail-vrouter-common, openstack-util
-    # Need to use: upgrade-vnc-compute configure_nova=no manage_nova_compute=no -P contrail-vrouter-common, openstack-util -F <from release> -T <target release>
+    # Create new repo, upgrade contrail-openstack-vrouter 
     for i in "$@"
     do
-      ssh root@$1 sudo yum upgrade -y contrail-vrouter-common openstack-utils
+      ssh root@$i sudo route -n
+      scp $repo_location root@$i:/etc/yum.repos.d/.
+      ssh root@$i yum list contrail-openstack-vrouter
+      ssh root@$i yum upgrade -y contrail-openstack-vrouter
+      ssh root@$i yum list contrail-openstack-vrouter
+      ssh root@$i sudo route -n
     done
 }
 
@@ -92,9 +96,13 @@ function issu_contrail_switch_compute_node {
       ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart true
       ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup true
       ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-nodemgr.conf DISCOVERY server %s ${new_control_arr[0]}
-      ssh root@$i sudo service supervisor-vrouter restart
+      ssh root@$i sudo service supervisor-vrouter stop
+      ssh root@$i sudo modprobe -r vrouter || rmmod vrouter
+      ssh root@$i sudo modprobe vrouter
+      ssh root@$i sudo service supervisor-vrouter start
       ssh root@$i sudo contrail-status
       ssh root@$i sudo route -n
+      #ssh root@$i sudo reboot
     done
 }
 
@@ -102,5 +110,5 @@ function issu_contrail_switch_compute_node {
 ## Call functions in this order
 #issu_contrail_prepare_compute_node $@
 #issu_contrail_upgrade_compute_node $@
-#issu_contrail_switch_compute_node $@
+issu_contrail_switch_compute_node $@
 

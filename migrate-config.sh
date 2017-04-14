@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+sed -i 's/ = /=/g' /etc/contrail/contrail-issu.conf
 source /etc/contrail/contrail-issu.conf
 
 # Step 0
@@ -85,24 +86,28 @@ function disable_services_on_new {
     echo "== Step 3 =="
     for i in "${!config_new_dict[@]}"
     do
+      ssh root@$i hostname
       ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/contrail-api.ini 
       ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/contrail-discovery.ini 
       ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/ifmap.ini
-      ssh root@$i  service supervisor-config stop
+      ssh root@$i service supervisor-config stop
+      ssh root@$i service supervisor-config status
     done
 }
 
 function freeze_nb {
     # Freeze all NB APIs on OS node
     echo "== Step 4 =="
-    ssh root@$openstack_ip service haproxy stop
+    for i in $(echo $new_rabbit_address_list | sed "s/,/ /g")
+    do
+     ssh root@$i service haproxy stop
+    done
 }
 
 function issu_pre_sync {    
     # Perform ISSU pre sync
     echo "== Step 5 =="
     ssh root@${new_control_arr[0]} contrail-issu-pre-sync -c /etc/contrail/contrail-issu.conf
-    #echo $cmd
 }
 
 function issu_run_sync {
@@ -126,9 +131,9 @@ function issu_run_sync {
 
 
 # Call functions in this order
-add_new_to_old
-add_old_to_new
-freeze_nb
-disable_services_on_new
-issu_pre_sync
+#add_new_to_old
+#add_old_to_new
+#freeze_nb
+#disable_services_on_new
+#issu_pre_sync
 issu_run_sync
