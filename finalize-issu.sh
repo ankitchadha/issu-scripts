@@ -73,11 +73,35 @@ function issu_contrail_stop_old_node {
     done
 }
 
+function issu_post_sync {
+    rm -f /etc/supervisord.d/contrail-issu.ini
+    service supervisor restart
+    contrail-issu-post-sync -c /etc/contrail/contrail-issu.conf
+    contrail-issu-zk-sync -c /etc/contrail/contrail-issu.conf
+}
 
+function issu_contrail_post_new_control {
+    for i in "${!control_new_dict[@]}"
+    do
+      ssh root@$i contrail-status
+      ssh root@$i issu_contrail_set_supervisord_config_files 'contrail-device-manager' 'true'
+      ssh root@$i issu_contrail_set_supervisord_config_files 'contrail-svc-monitor' 'true'
+      ssh root@$i issu_contrail_set_supervisord_config_files 'contrail-schema' 'true'
+      ssh root@$i openstack-config --del /etc/contrail/supervisord_config_files/contrail-config-nodemgr.ini eventlistener:contrail-config-nodemgr autorestart
+      ssh root@$i openstack-config --del /etc/contrail/supervisord_config_files/contrail-config-nodemgr.ini eventlistener:contrail-config-nodemgr autostart
+      ssh root@$i service supervisor-config restart
+    done
+}
+
+function issu_contrail_migrate_nb {
+    for i in $(echo $new_rabbit_address_list | sed "s/,/ /g")
+    do
+      ssh root@$i sed -i 
+    #### TBD 
+}
 # Call functions in this order
-add_new_to_old
-add_old_to_new
-freeze_nb
-disable_services_on_new
-issu_pre_sync
-issu_run_sync
+#issu_contrail_stop_old_node
+#issu_post_sync
+#issu_contrail_post_new_control
+#issu_contrail_migrate_nb oldip newip
+#issu_contrail_finalize_config_node

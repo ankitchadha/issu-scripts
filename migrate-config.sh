@@ -61,6 +61,16 @@ do
 new_control_arr+=($i)
 done
 
+function create_vhost_on_OS {
+    # create vhost on the RMQ server
+    echo "== Step 0 =="
+    for i in $(echo $new_rabbit_address_list | sed "s/,/ /g") 
+    do
+      ssh root@$i rabbitmqctl add_vhost $new_rabbit_vhost
+      ssh root@$i rabbitmqctl set_permissions -p $new_rabbit_vhost guest ".*" ".*" ".*"
+    done
+}
+
 function add_new_to_old {
     # add new control nodes to old CFGM
     echo "== Step 1 =="
@@ -131,9 +141,10 @@ function issu_run_sync {
 
 
 # Call functions in this order
+#create_vhost_on_OS
 #add_new_to_old
 #add_old_to_new
 #freeze_nb
 #disable_services_on_new
 #issu_pre_sync
-issu_run_sync
+#issu_run_sync
