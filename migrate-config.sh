@@ -97,9 +97,7 @@ function disable_services_on_new {
     for i in "${!config_new_dict[@]}"
     do
       ssh root@$i hostname
-      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/contrail-api.ini 
-      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/contrail-discovery.ini 
-      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/ifmap.ini
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files \"/etc/contrail/supervisord_config_files/contrail-api.ini /etc/contrail/supervisord_config_files/contrail-discovery.ini /etc/contrail/supervisord_config_files/ifmap.ini\"
       ssh root@$i service supervisor-config stop
       ssh root@$i service supervisor-config status
     done
@@ -149,5 +147,5 @@ sed -i -e 's/ = /=/g' /etc/contrail/contrail-issu.conf
 #add_old_to_new
 #freeze_nb
 disable_services_on_new
-issu_pre_sync
-issu_run_sync
+#issu_pre_sync
+#issu_run_sync
