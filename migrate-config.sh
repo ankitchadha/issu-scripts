@@ -85,7 +85,10 @@ function disable_services_on_new {
     echo "== Step 3 =="
     for i in "${!config_new_dict[@]}"
     do
-      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files "/etc/contrail/supervisord_config_files/contrail-api.ini /etc/contrail/supervisord_config_files/contrail-discovery.ini /etc/contrail/supervisord_config_files/ifmap.ini" && service supervisor-config stop
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/contrail-api.ini 
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/contrail-discovery.ini 
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files /etc/contrail/supervisord_config_files/ifmap.ini
+      ssh root@$i  service supervisor-config stop
     done
 }
 

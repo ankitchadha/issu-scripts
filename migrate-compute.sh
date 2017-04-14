@@ -63,36 +63,44 @@ done
 function issu_contrail_prepare_compute_node {
     echo "== Step 1 =="
     # Remove vrouter files from supervisord
-    ssh root@$1 sudo route -n && sudo openstack-config --del /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart
-    ssh root@$1 sudo openstack-config --del /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup
-    ssh root@$1 contrail-status
+    for i in "$@"
+    do
+      ssh root@$i sudo route -n
+      ssh root@$i  sudo openstack-config --del /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart
+      ssh root@$i sudo openstack-config --del /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup
+      ssh root@$i contrail-status
+    done
 }
 
 function issu_contrail_upgrade_compute_node {
-	echo "== Step 2 =="
-	# Create new repo, upgrade contrail-openstack-vrouter (or upgrade these: contrail-vrouter-common, openstack-util
-	# Need to use: upgrade-vnc-compute configure_nova=no manage_nova_compute=no -P contrail-vrouter-common, openstack-util -F <from release> -T <target release>
-	ssh root@$1 sudo yum upgrade -y contrail-vrouter-common openstack-utils
+    echo "== Step 2 =="
+    # Create new repo, upgrade contrail-openstack-vrouter (or upgrade these: contrail-vrouter-common, openstack-util
+    # Need to use: upgrade-vnc-compute configure_nova=no manage_nova_compute=no -P contrail-vrouter-common, openstack-util -F <from release> -T <target release>
+    for i in "$@"
+    do
+      ssh root@$1 sudo yum upgrade -y contrail-vrouter-common openstack-utils
+    done
 }
 
 function issu_contrail_switch_compute_node {
     echo "== Step 3=="
     # Restore the supervisor-vrouter settings and point to new discovery IP
-    ssh root@$1 sudo route -n
-    ssh root@$1 sudo openstack-config --set /etc/contrail/contrail-vrouter-agent.conf DISCOVERY server ${new_control_arr[0]}
-    ssh root@$1 sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart true
-    ssh root@$1 sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup true
-    ssh root@$1 sudo openstack-config --set /etc/contrail/contrail-vrouter-nodemgr.conf DISCOVERY server %s ${new_control_arr[0]}
-    ssh root@$1 sudo service supervisor-vrouter restart
-    ssh root@$1 sudo contrail-status
-    ssh root@$1 sudo route -n
+    for i in "$@"
+    do
+      ssh root@$i sudo route -n
+      ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-agent.conf DISCOVERY server ${new_control_arr[0]}
+      ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart true
+      ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup true
+      ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-nodemgr.conf DISCOVERY server %s ${new_control_arr[0]}
+      ssh root@$i sudo service supervisor-vrouter restart
+      ssh root@$i sudo contrail-status
+      ssh root@$i sudo route -n
+    done
 }
 
 
-	 
-
-
 ## Call functions in this order
-issu_contrail_prepare_compute_node
-#issu_contrail_prepare_compute_node
-#issu_contrail_switch_compute_node
+#issu_contrail_prepare_compute_node $@
+#issu_contrail_upgrade_compute_node $@
+#issu_contrail_switch_compute_node $@
+
