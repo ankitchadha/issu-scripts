@@ -65,7 +65,7 @@ function issu_contrail_stop_old_node {
     echo "== Step 1=="
     for i in "${!control_old_dict[@]}"
     do
-      ssh root@{config_old_dict[$i]} sudo service supervisor-config stop && sudo service supervisor-control stop && sudo service supervisor-webui stop
+      ssh root@{config_old_dict[$i]} sudo service supervisor-config stop;sudo service supervisor-control stop;sudo service supervisor-webui stop
     done
     for i in "${!analytics_old_dict[@]}"
     do
@@ -83,10 +83,20 @@ function issu_post_sync {
 function issu_contrail_post_new_control {
     for i in "${!control_new_dict[@]}"
     do
+      ssh root@$i hostname
       ssh root@$i contrail-status
-      ssh root@$i issu_contrail_set_supervisord_config_files 'contrail-device-manager' 'true'
-      ssh root@$i issu_contrail_set_supervisord_config_files 'contrail-svc-monitor' 'true'
-      ssh root@$i issu_contrail_set_supervisord_config_files 'contrail-schema' 'true'
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager autostart true
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager autorestart true  
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager killasgroup true
+      
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor autostart true 
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor autorestart true
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor killasgroup true
+      
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema autostart true
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema autorestart true
+      openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema killasgroup true
+
       ssh root@$i openstack-config --del /etc/contrail/supervisord_config_files/contrail-config-nodemgr.ini eventlistener:contrail-config-nodemgr autorestart
       ssh root@$i openstack-config --del /etc/contrail/supervisord_config_files/contrail-config-nodemgr.ini eventlistener:contrail-config-nodemgr autostart
       ssh root@$i service supervisor-config restart
@@ -96,12 +106,27 @@ function issu_contrail_post_new_control {
 function issu_contrail_migrate_nb {
     for i in $(echo $new_rabbit_address_list | sed "s/,/ /g")
     do
-      ssh root@$i sed -i 
+      num=0
+      for j in $(echo $old_control_list | sed "s/,/ /g")
+      do
+        ssh root@$i sed -i -e \"s/${old_control_arr[$num]}/${new_control_arr[$num]}/g\" /etc/haproxy/haproxy.cfg
+        echo ${old_control_arr[$num]}
+        echo ${new_control_arr[$num]}
+        num+=1
+      done
+      ssh root@$i service haproxy restart
+      ssh root@$i hostname
+    done
     #### TBD 
 }
+
+function issu_contrail_finalize_config_node {
+    sudo python /opt/contrail/utils/provision_issu.py -c /etc/contrail/contrail-issu.conf
+}
 # Call functions in this order
+
 #issu_contrail_stop_old_node
 #issu_post_sync
 #issu_contrail_post_new_control
-#issu_contrail_migrate_nb oldip newip
+#issu_contrail_migrate_nb 
 #issu_contrail_finalize_config_node
