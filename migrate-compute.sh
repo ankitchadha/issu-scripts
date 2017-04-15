@@ -98,8 +98,8 @@ function issu_contrail_switch_compute_node {
       ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-agent.conf DISCOVERY server ${new_control_arr[0]}
       ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart true
       ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup true
-      ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-nodemgr.conf DISCOVERY server %s ${new_control_arr[0]}
-      ssh root@$i service supervisor-vrouter status; service supervisor-vrouter stop; service supervisor-vrouter status; rmmod vrouter;service supervisor-vrouter start
+      ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-nodemgr.conf DISCOVERY server ${new_control_arr[0]}
+      ssh root@$i service supervisor-vrouter status; service supervisor-vrouter stop; rmmod vrouter;service supervisor-vrouter start
       ssh root@$i contrail-status
       ssh root@$i sudo route -n
     done
@@ -107,7 +107,7 @@ function issu_contrail_switch_compute_node {
 
 
 ## Call functions in this order
-issu_contrail_prepare_compute_node $@
-issu_contrail_upgrade_compute_node $@
+#issu_contrail_prepare_compute_node $@
+#issu_contrail_upgrade_compute_node $@
 issu_contrail_switch_compute_node $@
 
