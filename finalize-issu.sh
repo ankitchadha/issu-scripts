@@ -48,6 +48,21 @@ fi
 done
 done
 
+old_analytics_host_info_trimmed=$(echo $old_analytics_host_info | cut -d "{" -f2 | cut -d "}" -f1)
+declare -A analytics_old_dict
+for i in $(echo $old_analytics_host_info_trimmed | sed "s/,/ /g")
+do
+currentIP="nil"
+for j in $(echo $i| sed "s/:/ /g")
+do
+if [ "$currentIP" = "nil" ] ; then
+        currentIP=$j
+else
+        analytics_old_dict[$currentIP]=$j
+fi
+done
+done
+
 old_control_arr=()
 for i in $(echo $old_control_list | sed "s/,/ /g")
 do
@@ -65,17 +80,18 @@ function issu_contrail_stop_old_node {
     echo "== Step 1=="
     for i in "${!control_old_dict[@]}"
     do
-      ssh root@{config_old_dict[$i]} sudo service supervisor-config stop;sudo service supervisor-control stop;sudo service supervisor-webui stop
+      ssh root@${control_old_dict[$i]} sudo service supervisor-config stop;sudo service supervisor-control stop;sudo service supervisor-webui stop
     done
     for i in "${!analytics_old_dict[@]}"
     do
-      ssh root@{analytics_old_dict[$i] sudo service supervisor-collector stop
+      echo $i
+      ssh root@${analytics_old_dict[$i]} sudo service supervisor-analytics stop
     done
 }
 
 function issu_post_sync {
     rm -f /etc/supervisord.d/contrail-issu.ini
-    service supervisor restart
+    service supervisord restart
     contrail-issu-post-sync -c /etc/contrail/contrail-issu.conf
     contrail-issu-zk-sync -c /etc/contrail/contrail-issu.conf
 }
@@ -85,20 +101,22 @@ function issu_contrail_post_new_control {
     do
       ssh root@$i hostname
       ssh root@$i contrail-status
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager autostart true
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager autorestart true  
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager killasgroup true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager autostart true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager autorestart true  
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-device-manager.ini program:contrail-device-manager killasgroup true
       
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor autostart true 
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor autorestart true
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor killasgroup true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor autostart true 
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor autorestart true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-svc-monitor.ini program:contrail-svc-monitor killasgroup true
       
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema autostart true
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema autorestart true
-      openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema killasgroup true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema autostart true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema autorestart true
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config_files/contrail-schema.ini program:contrail-schema killasgroup true
 
       ssh root@$i openstack-config --del /etc/contrail/supervisord_config_files/contrail-config-nodemgr.ini eventlistener:contrail-config-nodemgr autorestart
       ssh root@$i openstack-config --del /etc/contrail/supervisord_config_files/contrail-config-nodemgr.ini eventlistener:contrail-config-nodemgr autostart
+
+      ssh root@$i openstack-config --set /etc/contrail/supervisord_config.conf include files \"/etc/contrail/supervisord_config_files/*.ini\"
       ssh root@$i service supervisor-config restart
     done
 }
@@ -129,4 +147,4 @@ function issu_contrail_finalize_config_node {
 #issu_post_sync
 #issu_contrail_post_new_control
 #issu_contrail_migrate_nb 
-#issu_contrail_finalize_config_node
+issu_contrail_finalize_config_node
