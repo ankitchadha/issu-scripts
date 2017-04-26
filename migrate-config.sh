@@ -77,6 +77,7 @@ function add_new_to_old {
     for i in "${!control_new_dict[@]}"
     do
       ssh root@${old_control_arr[0]} python /opt/contrail/utils/provision_control.py --host_name ${control_new_dict[$i]} --host_ip $i --api_server_ip ${old_control_arr[0]} --api_server_port 8082 --oper add --admin_user admin --admin_password $admin_password --admin_tenant_name admin --router_asn 64512
+      ssh root@${old_control_arr[0]} hostname
       #echo $cmd
     done
 }
@@ -146,6 +147,6 @@ sed -i -e 's/ = /=/g' /etc/contrail/contrail-issu.conf
 #add_new_to_old
 #add_old_to_new
 #freeze_nb
-disable_services_on_new
+#disable_services_on_new
 #issu_pre_sync
-#issu_run_sync
+issu_run_sync

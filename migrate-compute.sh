@@ -96,6 +96,8 @@ function issu_contrail_switch_compute_node {
     do
       ssh root@$i sudo route -n
       ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-agent.conf DISCOVERY server ${new_control_arr[0]}
+      ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-agent.conf CONTROL-NODE server ${new_control_arr[0]}
+      ssh root@$i sudo sed -i s/DISCOVERY=$os_vip/DISCOVERY=${new_control_arr[0]}/g /etc/contrail/vrouter_nodemgr_param
       ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent autostart true
       ssh root@$i sudo openstack-config --set /etc/contrail/supervisord_vrouter_files/contrail-vrouter-agent.ini program:contrail-vrouter-agent killasgroup true
       ssh root@$i sudo openstack-config --set /etc/contrail/contrail-vrouter-nodemgr.conf DISCOVERY server ${new_control_arr[0]}
