@@ -90,6 +90,7 @@ function issu_contrail_stop_old_node {
 }
 
 function issu_post_sync {
+    echo "== Step 2=="
     rm -f /etc/supervisord.d/contrail-issu.ini
     service supervisord restart
     contrail-issu-post-sync -c /etc/contrail/contrail-issu.conf
@@ -97,6 +98,7 @@ function issu_post_sync {
 }
 
 function issu_contrail_post_new_control {
+    echo "== Step 3=="
     for i in "${!control_new_dict[@]}"
     do
       ssh root@$i hostname
@@ -122,6 +124,7 @@ function issu_contrail_post_new_control {
 }
 
 function issu_contrail_migrate_nb {
+    echo "== Step 4=="
     for i in $(echo $new_rabbit_address_list | sed "s/,/ /g")
     do
       num=0
@@ -139,12 +142,13 @@ function issu_contrail_migrate_nb {
 }
 
 function issu_contrail_finalize_config_node {
+    echo "== Step 5=="
     sudo python /opt/contrail/utils/provision_issu.py -c /etc/contrail/contrail-issu.conf
 }
 # Call functions in this order
 
-#issu_contrail_stop_old_node
-#issu_post_sync
-#issu_contrail_post_new_control
-#issu_contrail_migrate_nb 
+issu_contrail_stop_old_node
+issu_post_sync
+issu_contrail_post_new_control
+issu_contrail_migrate_nb 
 issu_contrail_finalize_config_node

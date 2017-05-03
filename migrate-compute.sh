@@ -109,7 +109,7 @@ function issu_contrail_switch_compute_node {
 
 
 ## Call functions in this order
-#issu_contrail_prepare_compute_node $@
-#issu_contrail_upgrade_compute_node $@
+issu_contrail_prepare_compute_node $@
+issu_contrail_upgrade_compute_node $@
 issu_contrail_switch_compute_node $@
 

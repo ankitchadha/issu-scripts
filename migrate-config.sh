@@ -143,10 +143,11 @@ function issu_run_sync {
 
 sed -i -e 's/ = /=/g' /etc/contrail/contrail-issu.conf
 
-create_vhost_on_OS
-#add_new_to_old
-#add_old_to_new
-#freeze_nb
-#disable_services_on_new
-#issu_pre_sync
-#issu_run_sync
+# Un-comment create_vhost_on_OS if you need to create a new RMQ host on the Controller
+#create_vhost_on_OS
+add_new_to_old
+add_old_to_new
+freeze_nb
+disable_services_on_new
+issu_pre_sync
+issu_run_sync
