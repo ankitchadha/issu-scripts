@@ -67,7 +67,7 @@ function create_vhost_on_OS {
     for i in $(echo $new_rabbit_address_list | sed "s/,/ /g") 
     do
       ssh root@$i rabbitmqctl add_vhost $new_rabbit_vhost
-      ssh root@$i rabbitmqctl set_permissions -p $new_rabbit_vhost guest ".*" ".*" ".*"
+      ssh root@$i rabbitmqctl set_permissions -p $new_rabbit_vhost guest ".\*" ".\*" ".\*"
     done
 }
 
@@ -143,10 +143,10 @@ function issu_run_sync {
 
 sed -i -e 's/ = /=/g' /etc/contrail/contrail-issu.conf
 
-#create_vhost_on_OS
+create_vhost_on_OS
 #add_new_to_old
 #add_old_to_new
 #freeze_nb
 #disable_services_on_new
 #issu_pre_sync
-issu_run_sync
+#issu_run_sync
